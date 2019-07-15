@@ -5,6 +5,8 @@ VisualStudioVersion = 15.0.28010.2046
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ArkImportTools", "ArkImportTools\ArkImportTools.csproj", "{A904F6D9-39B7-4EB2-B4E1-D362D9234C1A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UassetToolkit", "UassetToolkit\UassetToolkit.csproj", "{A86E4192-C184-40F5-B553-563541F5AF54}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{A904F6D9-39B7-4EB2-B4E1-D362D9234C1A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A904F6D9-39B7-4EB2-B4E1-D362D9234C1A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A904F6D9-39B7-4EB2-B4E1-D362D9234C1A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A86E4192-C184-40F5-B553-563541F5AF54}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A86E4192-C184-40F5-B553-563541F5AF54}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A86E4192-C184-40F5-B553-563541F5AF54}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A86E4192-C184-40F5-B553-563541F5AF54}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
