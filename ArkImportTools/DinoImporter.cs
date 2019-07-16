@@ -41,7 +41,7 @@ namespace ArkImportTools
                     string pathname = map[e.Name];
 
                     //Now, open the UASSET file
-                    UAssetFile f = UAssetFile.OpenFile(pathname, false, e.Name, Program.GAME_ROOT_PATH);
+                    UAssetFileBlueprint f = UAssetFileBlueprint.OpenFile(pathname, false, e.Name, Program.GAME_ROOT_PATH);
 
                     //Create a dino entry
                     ArkDinoEntry entry = ArkDinoEntry.Convert(f, cache);

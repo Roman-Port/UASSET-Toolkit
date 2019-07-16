@@ -6,6 +6,6 @@ namespace UassetToolkit
 {
     public class UAssetCacheBlock
     {
-        public Dictionary<string, UAssetFile> files = new Dictionary<string, UAssetFile>();
+        public Dictionary<string, UAssetFileBlueprint> files = new Dictionary<string, UAssetFileBlueprint>();
     }
 }

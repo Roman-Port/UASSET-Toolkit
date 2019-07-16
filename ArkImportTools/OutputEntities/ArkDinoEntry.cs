@@ -36,20 +36,20 @@ namespace ArkImportTools.OutputEntities
 
         public int captureTime;
 
-        public static ArkDinoEntry Convert(UAssetFile f, UAssetCacheBlock cache)
+        public static ArkDinoEntry Convert(UAssetFileBlueprint f, UAssetCacheBlock cache)
         {
             //Open reader
             PropertyReader reader = new PropertyReader(f.GetFullProperties(cache));
 
             //Get the dino settings
-            UAssetFile settingsFileAdult = ArkDinoFood.GetAdultFile(f);
-            UAssetFile settingsFileBaby = ArkDinoFood.GetBabyFile(f);
+            UAssetFileBlueprint settingsFileAdult = ArkDinoFood.GetAdultFile(f);
+            UAssetFileBlueprint settingsFileBaby = ArkDinoFood.GetBabyFile(f);
 
             //Get time
             int time = (int)Math.Round((DateTime.UtcNow - new DateTime(1970, 1, 1, 0, 0, 0, 0)).TotalSeconds);
 
             //Get status component
-            UAssetFile statusComponent = ArkDinoEntryStatus.GetFile(f);
+            UAssetFileBlueprint statusComponent = ArkDinoEntryStatus.GetFile(f);
             PropertyReader statusReader = new PropertyReader(statusComponent.GetFullProperties(cache));
 
             //Read
@@ -84,7 +84,7 @@ namespace ArkImportTools.OutputEntities
         public float extraBabyDinoConsumingFoodRateMultiplier;
         public float foodConsumptionMultiplier;
 
-        public static UAssetFile GetFile(UAssetFile f)
+        public static UAssetFileBlueprint GetFile(UAssetFileBlueprint f)
         {
             //Search for this by name
             GameObjectTableHead hr = null;
@@ -100,7 +100,7 @@ namespace ArkImportTools.OutputEntities
             return f.GetReferencedUAsset(hr);
         }
 
-        public static ArkDinoEntryStatus Convert(UAssetFile f, PropertyReader reader)
+        public static ArkDinoEntryStatus Convert(UAssetFileBlueprint f, PropertyReader reader)
         {
             return new ArkDinoEntryStatus
             {
@@ -121,7 +121,7 @@ namespace ArkImportTools.OutputEntities
         public int foodCategory;
         public float priority;
 
-        public static UAssetFile GetAdultFile(UAssetFile f)
+        public static UAssetFileBlueprint GetAdultFile(UAssetFileBlueprint f)
         {
             //First, try to see if it's a property
             PropertyReader r = new PropertyReader(f.properties);
@@ -129,7 +129,7 @@ namespace ArkImportTools.OutputEntities
             if(p != null)
             {
                 //Get file
-                return p.GetReferencedFile();
+                return p.GetReferencedFileBlueprint();
             }
 
             //Get the base DinoSettingsClass property
@@ -137,14 +137,14 @@ namespace ArkImportTools.OutputEntities
             if(p != null)
             {
                 //Get file
-                return p.GetReferencedFile();
+                return p.GetReferencedFileBlueprint();
             }
 
             //Throw error
             throw new Exception("Dino settings class was not found.");
         }
 
-        public static UAssetFile GetBabyFile(UAssetFile f)
+        public static UAssetFileBlueprint GetBabyFile(UAssetFileBlueprint f)
         {
             //First, try to see if it's a property
             PropertyReader r = new PropertyReader(f.properties);
@@ -152,14 +152,14 @@ namespace ArkImportTools.OutputEntities
             if (p != null)
             {
                 //Get file
-                return p.GetReferencedFile();
+                return p.GetReferencedFileBlueprint();
             }
 
             //Fallback to adult settings
             return GetAdultFile(f);
         }
 
-        public static List<ArkDinoFood> Convert(UAssetFile f, UAssetCacheBlock cache)
+        public static List<ArkDinoFood> Convert(UAssetFileBlueprint f, UAssetCacheBlock cache)
         {
             //Open reader
             PropertyReader reader = new PropertyReader(f.GetFullProperties(cache));
@@ -178,7 +178,7 @@ namespace ArkImportTools.OutputEntities
             return output;
         }
 
-        private static List<ArkDinoFood> ConvertMultiplier(UAssetFile f, UAssetCacheBlock cache, ArrayProperty p)
+        private static List<ArkDinoFood> ConvertMultiplier(UAssetFileBlueprint f, UAssetCacheBlock cache, ArrayProperty p)
         {
             //Convert each entry
             List<ArkDinoFood> output = new List<ArkDinoFood>();
@@ -187,7 +187,7 @@ namespace ArkImportTools.OutputEntities
                 StructProperty data = (StructProperty)s;
                 PropListStruct sdata = (PropListStruct)data.data;
                 PropertyReader reader = new PropertyReader(sdata.propsList);
-                UAssetFile foodClass = reader.GetProperty<ObjectProperty>("FoodItemParent").GetReferencedFile();
+                UAssetFileBlueprint foodClass = reader.GetProperty<ObjectProperty>("FoodItemParent").GetReferencedFileBlueprint();
                 ArkDinoFood food = new ArkDinoFood
                 {
                     classname = foodClass.classname,

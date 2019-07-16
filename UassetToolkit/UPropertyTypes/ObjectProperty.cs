@@ -57,9 +57,11 @@ namespace UassetToolkit.UPropertyTypes
             return $"objectRefType={objectRefType.ToString()}, objectIndex={objectIndex}, className={className}, sourceClassname={source.classname}";
         }
 
-        public UAssetFile GetReferencedFile()
+        public UAssetFileBlueprint GetReferencedFileBlueprint()
         {
-            return source.GetReferencedUAsset(this);
+            if (source.GetType() != typeof(UAssetFileBlueprint))
+                throw new Exception("Only UAssetFileBlueprint are supported for getting refrenced files with this method.");
+            return ((UAssetFileBlueprint)source).GetReferencedUAsset(this);
         }
 
         public enum ObjectPropertyType
