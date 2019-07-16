@@ -13,7 +13,7 @@ namespace ArkImportTools
 
         static void Main(string[] args)
         {
-            DinoImporter.ImportDinos();
+            //DinoImporter.ImportDinos();
 
             MultipleFileTest();
 
@@ -27,7 +27,8 @@ namespace ArkImportTools
         static void MultipleFileTest()
         {
             //SingleFileTest(@"Aberration\Dinos\RockDrake\RockDrake_Character_BP.uasset", "RockDrake_Character_BP");
-            SingleFileTest(@"PrimalEarth\Dinos\Argentavis\Argent_Character_BP.uasset", "Argent_Character_BP");
+            //SingleFileTest(@"PrimalEarth\Dinos\Argentavis\Argent_Character_BP.uasset", "Argent_Character_BP");
+            SingleFileTest(@"PrimalEarth\UI\Textures\HubInventoryIcon.uasset", "HubInventoryIcon");
 
             Console.WriteLine("Done ALL");
             Console.ReadLine();
@@ -36,15 +37,18 @@ namespace ArkImportTools
         static void SingleFileTest(string path, string classname)
         {
             Console.WriteLine("Testing");
+            using (FileStream fs = new FileStream(GAME_ROOT_PATH + path, FileMode.Open, FileAccess.Read))
+            {
+                UAssetFile f = UAssetFile.OpenFile(fs, true, classname, GAME_ROOT_PATH);
+                f.ReadAsImage();
+                UAssetCacheBlock cache = new UAssetCacheBlock();
+                //List<UProperty> props = f.GetFullProperties(cache);
+                /*foreach (var p in props)
+                    Console.WriteLine($"{p.name}, {p.type}, {p.WriteString()}");*/
 
-            UAssetFile f = UAssetFile.OpenFile(GAME_ROOT_PATH + path, false, classname, GAME_ROOT_PATH);
-            UAssetCacheBlock cache = new UAssetCacheBlock();
-            List<UProperty> props = f.GetFullProperties(cache);
-            foreach (var p in props)
-                Console.WriteLine($"{p.name}, {p.type}, {p.WriteString()}");
-
-            //File.WriteAllText("E:\\rockdrake.json", JsonConvert.SerializeObject(props, Formatting.Indented));
-            ArkDinoEntry e = ArkDinoEntry.Convert(f, cache);
+                //File.WriteAllText("E:\\rockdrake.json", JsonConvert.SerializeObject(props, Formatting.Indented));
+                //ArkDinoEntry e = ArkDinoEntry.Convert(f, cache);
+            }
             Console.WriteLine("Done");
             Console.ReadLine();
         }

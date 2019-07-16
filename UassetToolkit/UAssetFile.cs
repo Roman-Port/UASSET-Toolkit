@@ -91,11 +91,15 @@ namespace UassetToolkit
             f.ReadPackageMetadata();
 
             //Get parent classname
-            f.hasParentUObject = f.TryGetFullPackagePath(f.metadata["ParentClassPackage"], out f.parentPath);
-            f.parentClassname = GetPackageClassnameFromPath(f.metadata["ParentClassPackage"]);
+            f.hasParentUObject = false;
+            if(f.metadata.ContainsKey("ParentClassPackage"))
+            {
+                f.hasParentUObject = f.TryGetFullPackagePath(f.metadata["ParentClassPackage"], out f.parentPath);
+                f.parentClassname = GetPackageClassnameFromPath(f.metadata["ParentClassPackage"]);
+            }
 
             //Now, read properties
-            f.ReadDefaultProperties();
+            //f.ReadDefaultProperties();
 
             return f;
         }
@@ -229,6 +233,18 @@ namespace UassetToolkit
         {
             //Find the embedded game object with the data
             EmbeddedGameObjectTableHead result = FindEmbeddedObjectByType($"Default__{classname}_C");
+
+            //Go to
+            stream.position = result.dataLocation;
+
+            //Read
+            properties = UProperty.ReadProperties(stream, this, null, false);
+        }
+
+        public void ReadAsImage()
+        {
+            //Find the embedded game object with the data
+            EmbeddedGameObjectTableHead result = gameObjectEmbeds[1];
 
             //Go to
             stream.position = result.dataLocation;

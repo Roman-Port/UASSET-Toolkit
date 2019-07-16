@@ -129,19 +129,36 @@ namespace UassetToolkit
             int length = this.ReadInt();
             if (length == 0)
                 return "";
+
             //Validate length
             if (length > maxLen)
                 throw new Exception("Failed to read null-terminated string; Length from file exceeded maximum length requested.");
+
+            //My friend's arg broke this reader. Turns out extended characters use TWO bytes. I think if the length is negative, it's two bytes per character
             if (length < 0)
-                throw new Exception("Failed to read null-terminated string; Length was less than 0.");
-            //Read this many bytes.
-            byte[] buf = ReadBytes(length - 1);
-            //Read null byte, but discard
-            byte nullByte = ReadByte();
-            if (nullByte != 0x00)
-                throw new Exception("Failed to read null-terminated string; Terminator was not null!");
-            //Convert to string
-            return Encoding.UTF8.GetString(buf);
+            {
+                //Read this many bytes * 2
+                byte[] buf = ReadBytes((-length * 2) - 1);
+
+                //Read null byte, but discard
+                byte nullByte1 = ReadByte();
+                if (nullByte1 != 0x00)
+                    throw new Exception("Failed to read null-terminated string; 1st terminator in 2-bytes-per-character string was not null!");
+
+                //Convert to string
+                return Encoding.Unicode.GetString(buf);
+            }
+            else
+            {
+                //Read this many bytes.
+                byte[] buf = ReadBytes(length - 1);
+                //Read null byte, but discard
+                byte nullByte = ReadByte();
+                if (nullByte != 0x00)
+                    throw new Exception("Failed to read null-terminated string; Terminator was not null!");
+                //Convert to string
+                return Encoding.UTF8.GetString(buf);
+            }
         }
 
         public string[] ReadStringArray(int length)

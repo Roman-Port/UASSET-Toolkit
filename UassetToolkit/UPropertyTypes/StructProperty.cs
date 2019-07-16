@@ -73,6 +73,11 @@ namespace UassetToolkit.UPropertyTypes
                     //Some net stuff
                     st = new GuidStruct();
                 }
+                else if (structType == "IntPoint")
+                {
+                    //Some net stuff
+                    st = new IntPointStruct();
+                }
                 else
                 {
                     //Interpet this as a struct property list. Maybe raise a warning later?
