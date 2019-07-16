@@ -1,5 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using UassetToolkit.UPropertyTypes;
 
 namespace UassetToolkit
 {
@@ -32,22 +35,41 @@ namespace UassetToolkit
         public EmbeddedGameObjectTableHead[] gameObjectEmbeds;
         public string classname;
         public List<UProperty> properties;
+        public Dictionary<string, string> metadata;
+        public string parentPath;
+        public string parentClassname;
+        public bool hasParentUObject;
 
         //Others
         public IOMemoryStream stream;
         public bool isDebugModeEnabled;
+        public string rootPath;
+
 
         /// <summary>
         /// Opens a UAssetFile
         /// </summary>
         /// <returns></returns>
-        public static UAssetFile OpenFile(System.IO.Stream s, bool isDebugEnabled, string classname)
+        public static UAssetFile OpenFile(string pathname, bool isDebugEnabled, string classname, string rootPath)
+        {
+            using (FileStream fs = new FileStream(pathname, FileMode.Open, FileAccess.Read))
+            {
+                return OpenFile(fs, isDebugEnabled, classname, rootPath);
+            }
+        }
+
+        /// <summary>
+        /// Opens a UAssetFile
+        /// </summary>
+        /// <returns></returns>
+        public static UAssetFile OpenFile(System.IO.Stream s, bool isDebugEnabled, string classname, string rootPath)
         {
             //Create the object
             UAssetFile f = new UAssetFile
             {
                 isDebugModeEnabled = isDebugEnabled,
-                classname = classname
+                classname = classname,
+                rootPath = rootPath
             };
 
             //Create a stream
@@ -65,6 +87,13 @@ namespace UassetToolkit
             //Now, read embedded GameObject headers
             f.ReadEmbeddedGameObjectReferences();
 
+            //Read metadata
+            f.ReadPackageMetadata();
+
+            //Get parent classname
+            f.hasParentUObject = f.TryGetFullPackagePath(f.metadata["ParentClassPackage"], out f.parentPath);
+            f.parentClassname = GetPackageClassnameFromPath(f.metadata["ParentClassPackage"]);
+
             //Now, read properties
             f.ReadDefaultProperties();
 
@@ -73,14 +102,24 @@ namespace UassetToolkit
 
         public void Debug(string topic, string msg, ConsoleColor color)
         {
+            if (!isDebugModeEnabled)
+                return;
             Console.ForegroundColor = color;
-            if (isDebugModeEnabled)
-                Console.WriteLine($"[UAssetFile -> {topic}] " + msg);
+            Console.WriteLine($"[UAssetFile -> {topic}] " + msg);
+            Console.ForegroundColor = ConsoleColor.White;
+        }
+
+        public void Warn(string topic, string msg)
+        {
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine($"[UAssetFile WARNING -> {topic}] " + msg);
             Console.ForegroundColor = ConsoleColor.White;
         }
 
         public void DebugDump(string name, ConsoleColor color, params string[] data)
         {
+            if (!isDebugModeEnabled)
+                return;
             //Build
             string msg = $"";
             bool wasLastLabel = false;
@@ -94,6 +133,22 @@ namespace UassetToolkit
             }
                 
             Debug(name, msg, color);
+        }
+
+        public bool TryGetFullPackagePath(string path, out string output)
+        {
+            bool ok = path.StartsWith("/Game/");
+            if (ok)
+                output = path.Replace("/Game/", rootPath) + ".uasset";
+            else
+                output = path;
+            return ok;
+        }
+
+        public static string GetPackageClassnameFromPath(string pathname)
+        {
+            string[] splitClassname = pathname.Split('/');
+            return splitClassname[splitClassname.Length - 1];
         }
 
         void ReadHeaderData()
@@ -182,6 +237,30 @@ namespace UassetToolkit
             properties = UProperty.ReadProperties(stream, this, null, false);
         }
 
+        void ReadPackageMetadata()
+        {
+            stream.position = packagePropertyDictOffset;
+
+            stream.ReadInt();
+            stream.ReadUEString();
+            stream.ReadUEString();
+            stream.ReadInt();
+            stream.ReadInt(); //1
+            stream.ReadUEString(); //argent_character_bp
+            stream.ReadUEString(); //Blueprint
+
+            int len = stream.ReadInt();
+            string lastKey = null;
+            metadata = new Dictionary<string, string>();
+            for(int i = 0; i<len*2; i++)
+            {
+                if ((i % 2) == 0)
+                    lastKey = stream.ReadUEString();
+                else
+                    metadata.Add(lastKey, stream.ReadUEString());
+            }
+        }
+
         //Tools
         public List<EmbeddedGameObjectTableHead> FindEmbeddedObjectsByType(string type)
         {
@@ -202,6 +281,114 @@ namespace UassetToolkit
             if (results.Count > 1)
                 throw new Exception($"Failed to find embedded game object with type {type}: More than one result was found.");
             return results[0];
+        }
+
+        public UAssetFile OpenUAssetWithSameSettings(string path, string classname)
+        {
+            UAssetFile f;
+            using (FileStream fs = new FileStream(path, FileMode.Open, FileAccess.Read))
+                f = UAssetFile.OpenFile(fs, isDebugModeEnabled, classname, rootPath);
+            return f;
+        }
+
+        public UAssetFile GetReferencedUAsset(ObjectProperty h)
+        {
+            //Make sure htis is the correct type
+            if (h.objectRefType != ObjectProperty.ObjectPropertyType.TypeID)
+                throw new Exception("Only TypeID ObjectProperties are supported for finding a referenced file.");
+
+            //Find using the ID
+            return GetReferencedUAsset(h.objectIndex);
+        }
+
+        public UAssetFile GetReferencedUAsset(int index)
+        {
+            if(index < 0)
+            {
+                GameObjectTableHead hr = gameObjectReferences[-index - 1];
+                return GetReferencedUAsset(hr);
+            } else
+            {
+                GameObjectTableHead hr = gameObjectReferences[index];
+                return GetReferencedUAsset(hr);
+            }
+        }
+
+        public UAssetFile GetReferencedUAsset(GameObjectTableHead h)
+        {
+            //Check if we're actually looking for something else
+            if(h.index < 0)
+            {
+                GameObjectTableHead hr = gameObjectReferences[-h.index - 1];
+                return GetReferencedUAsset(hr);
+            }
+            
+            //Get the full path
+            bool ok = TryGetFullPackagePath(h.name, out string pathname);
+
+            //Stop if not ok
+            if (!ok)
+                return null;
+
+            //Get the pathname
+            string classname = GetPackageClassnameFromPath(h.name);
+
+            //Open file
+            return OpenUAssetWithSameSettings(pathname, classname);
+        }
+
+        /// <summary>
+        /// Gets properties from parents
+        /// </summary>
+        /// <returns></returns>
+        public List<UProperty> GetFullProperties(UAssetCacheBlock cache)
+        {
+            //First, create a list of properties. This list is in the opposite order it should be
+            List<List<UProperty>> props = new List<List<UProperty>>();
+            props.Add(properties);
+            
+            //Loop through
+            if(hasParentUObject)
+            {
+                string next = parentPath;
+                string nextClassname = parentClassname;
+                while (true)
+                {
+                    UAssetFile f;
+
+                    //Get
+                    if (cache.files.ContainsKey(nextClassname))
+                        f = cache.files[nextClassname];
+                    else
+                        using (FileStream fs = new FileStream(next, FileMode.Open, FileAccess.Read))
+                            f = UAssetFile.OpenFile(fs, isDebugModeEnabled, nextClassname, rootPath);
+
+                    //Add file to cache
+                    if (cache.files.ContainsKey(nextClassname))
+                        cache.files.Add(nextClassname, f);
+
+                    //Use
+                    props.Add(f.properties);
+                    next = f.parentPath;
+                    nextClassname = f.parentClassname;
+                    if (!f.hasParentUObject)
+                        break;
+                }
+            }
+
+            //Now, work up the list and add properties
+            List<UProperty> output = new List<UProperty>();
+            for(int i = 0; i<props.Count; i+=1)
+            {
+                //Loop through properties. If it doesn't exist in the output, add it
+                foreach(UProperty prop in props[i])
+                {
+                    if (output.Where(x => x.name == prop.name && x.index == prop.index).Count() == 0)
+                        output.Add(prop);
+                }
+            }
+
+            return output;
         }
     }
 }

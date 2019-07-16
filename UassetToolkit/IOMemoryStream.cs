@@ -156,6 +156,14 @@ namespace UassetToolkit
             return data;
         }
 
+        public string[] ReadStringArray()
+        {
+            //Read the length
+            int len = ReadInt();
+
+            return ReadStringArray(len);
+        }
+
         public byte[] ReadBytes(int length)
         {
             byte[] buf = new byte[length];

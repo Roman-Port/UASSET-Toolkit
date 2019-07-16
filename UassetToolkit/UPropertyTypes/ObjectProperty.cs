@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -11,6 +12,9 @@ namespace UassetToolkit.UPropertyTypes
         public int objectIndex; //Only used if the above is ObjectPropertyType.TypeID
         public string className; //Only used if the above is ObjectPropertyType.TypePath
 
+        [JsonIgnore]
+        public UAssetFile source;
+
         public ObjectProperty(IOMemoryStream ms, UAssetFile f) : base(ms, f)
         {
 
@@ -18,6 +22,7 @@ namespace UassetToolkit.UPropertyTypes
 
         public override void Read(IOMemoryStream ms, UAssetFile f)
         {
+            source = f;
             //If this is an array, assume 4
             if (isArray)
                 length = 4;
@@ -49,7 +54,12 @@ namespace UassetToolkit.UPropertyTypes
 
         public override string WriteString()
         {
-            return $"objectRefType={objectRefType.ToString()}, objectIndex={objectIndex}, className={className}";
+            return $"objectRefType={objectRefType.ToString()}, objectIndex={objectIndex}, className={className}, sourceClassname={source.classname}";
+        }
+
+        public UAssetFile GetReferencedFile()
+        {
+            return source.GetReferencedUAsset(this);
         }
 
         public enum ObjectPropertyType

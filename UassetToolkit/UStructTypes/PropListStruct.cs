@@ -11,6 +11,7 @@ namespace UassetToolkit.UStructTypes
     public class PropListStruct : UStruct
     {
         public Dictionary<string, UProperty> props;
+        public List<UProperty> propsList;
         public int count;
         public int u1;
         public int u2;
@@ -20,6 +21,7 @@ namespace UassetToolkit.UStructTypes
             //Read into array
             List<UProperty> sprops = UProperty.ReadProperties(ms, f, null, true);
             count = sprops.Count;
+            propsList = sprops;
             props = new Dictionary<string, UProperty>();
 
             //Convert to dict

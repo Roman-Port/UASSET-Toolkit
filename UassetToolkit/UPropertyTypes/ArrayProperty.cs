@@ -22,26 +22,34 @@ namespace UassetToolkit.UPropertyTypes
             unknownArray = ms.ReadInt();
             props = new List<UProperty>();
 
-            /*//Skip for now
-            ms.position += length;
-            return;*/
-
-            //Now, read the count. This cuts into the length
-            int count = ms.ReadInt();
-
-            //Read items
-            Console.WriteLine($"====READ ARRAY BEGIN @ {ms.position} ({arrayType}, {unknownArray})====");
-            for (int i = 0; i<count; i+=1)
+            //Skip if this is a ByteProperty
+            if(arrayType == "ByteProperty")
             {
-                //Read value
-                props.Add(UProperty.ReadProp(ms, f, arrayType, false));
-
-                //Read unknown flag
-                /*int flag = ms.ReadInt();
-                if (flag != 0)
-                    Console.WriteLine("Flag is != 0");*/
+                f.Warn("ArrayProperty", "Warning: ArrayProperty is skipping array because ByteProperty arrays are not supported at this time.");
+                ms.position += length;
+                return;
             }
-            Console.WriteLine($"====READ ARRAY END @ {ms.position}====");
+
+            long begin = ms.position;
+
+            try
+            {
+                //Now, read the count. This cuts into the length
+                int count = ms.ReadInt();
+
+                //Read items
+                f.Debug("Read Array", $"====READ ARRAY BEGIN @ {ms.position} ({arrayType}, {unknownArray})====", ConsoleColor.Yellow);
+                for (int i = 0; i < count; i += 1)
+                {
+                    //Read value
+                    props.Add(UProperty.ReadProp(ms, f, arrayType, false));
+                }
+                f.Debug("Read Array", $"====READ ARRAY END @ {ms.position}====", ConsoleColor.Yellow);
+            } catch (Exception ex)
+            {
+                f.Warn("ArrayProperty", $"Warning: Failed to read array '{name}' with type '{type}' in class '{f.classname}' for '{ex.Message}'. It will now be skipped.");
+                ms.position = begin + length;
+            }
         }
 
         public override string WriteString()

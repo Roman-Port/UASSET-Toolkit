@@ -13,4 +13,10 @@
     <ProjectReference Include="..\UassetToolkit\UassetToolkit.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="classes.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

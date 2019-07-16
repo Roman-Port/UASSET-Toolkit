@@ -25,12 +25,12 @@ namespace UassetToolkit.UPropertyTypes
                 structType = "(array)";
                 unknown = 0;
                 st = new PropListStruct();
-                Console.WriteLine($"====READ STRUCT BEGIN @ {ms.position} ({structType}, {unknown})====");
+                f.Debug("Read Array", $"====READ STRUCT BEGIN @ {ms.position} ({structType}, {unknown})====", ConsoleColor.Yellow);
             } else
             {
                 structType = ms.ReadNameTableEntry(f);
                 unknown = ms.ReadInt();
-                Console.WriteLine($"====READ STRUCT BEGIN @ {ms.position} ({structType}, {unknown})====");
+                f.Debug("Read Array", $"====READ STRUCT BEGIN @ {ms.position} ({structType}, {unknown})====", ConsoleColor.Yellow);
 
                 //Find the struct type
                 if (structType == "ItemNetID" || structType == "ItemNetInfo" || structType == "Transform" || structType == "PrimalPlayerDataStruct" || structType == "PrimalPlayerCharacterConfigStruct" || structType == "PrimalPersistentCharacterStatsStruct" || structType == "TribeData" || structType == "TribeGovernment" || structType == "TerrainInfo" || structType == "ArkInventoryData" || structType == "DinoOrderGroup" || structType == "ARKDinoData")
@@ -85,7 +85,7 @@ namespace UassetToolkit.UPropertyTypes
             st.ReadStruct(ms, f, this);
             data = st;
 
-            Console.WriteLine($"====READ STRUCT END @ {ms.position}====");
+            f.Debug("Read Struct", $"====READ STRUCT END @ {ms.position}====", ConsoleColor.Yellow);
         }
 
         public override string WriteString()
