@@ -53,51 +53,24 @@ namespace UassetToolkit
             properties = UProperty.ReadProperties(stream, this, null, false);
         }
 
-        public UAssetFileBlueprint GetReferencedUAsset(ObjectProperty h)
+        public UAssetFileBlueprint GetParentBlueprint(UAssetCacheBlock cache)
         {
-            //Make sure htis is the correct type
-            if (h.objectRefType != ObjectProperty.ObjectPropertyType.TypeID)
-                throw new Exception("Only TypeID ObjectProperties are supported for finding a referenced file.");
-
-            //Find using the ID
-            return GetReferencedUAsset(h.objectIndex);
-        }
-
-        public UAssetFileBlueprint GetReferencedUAsset(int index)
-        {
-            if (index < 0)
-            {
-                GameObjectTableHead hr = gameObjectReferences[-index - 1];
-                return GetReferencedUAsset(hr);
-            }
-            else
-            {
-                GameObjectTableHead hr = gameObjectReferences[index];
-                return GetReferencedUAsset(hr);
-            }
-        }
-
-        public UAssetFileBlueprint GetReferencedUAsset(GameObjectTableHead h)
-        {
-            //Check if we're actually looking for something else
-            if (h.index < 0)
-            {
-                GameObjectTableHead hr = gameObjectReferences[-h.index - 1];
-                return GetReferencedUAsset(hr);
-            }
-
-            //Get the full path
-            bool ok = TryGetFullPackagePath(h.name, out string pathname);
-
-            //Stop if not ok
-            if (!ok)
+            //Check
+            if (!hasParentUObject)
                 return null;
+            
+            //Get
+            UAssetFileBlueprint f;
+            if (cache.files.ContainsKey(parentClassname))
+                f = cache.files[parentPath];
+            else
+                f = OpenUAssetWithSameSettings(parentPath, parentClassname);
 
-            //Get the pathname
-            string classname = GetPackageClassnameFromPath(h.name);
+            //Add file to cache
+            if (cache.files.ContainsKey(parentClassname))
+                cache.files.Add(parentClassname, f);
 
-            //Open file
-            return OpenUAssetWithSameSettings(pathname, classname);
+            return f;
         }
 
         /// <summary>

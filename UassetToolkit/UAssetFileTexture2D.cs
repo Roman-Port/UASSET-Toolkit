@@ -9,6 +9,7 @@ namespace UassetToolkit
     {
         //Package data
         public List<UProperty> properties;
+        public Stream payload;
 
         public static UAssetFileTexture2D OpenFile(string pathname, bool isDebugEnabled, string classname, string rootPath)
         {
@@ -38,12 +39,24 @@ namespace UassetToolkit
 
             //Now, read properties
             ReadImageProperties();
+
+            //Read payload
+            payload = CopyPayload();
         }
 
         void ReadImageProperties()
         {
             //Find the embedded game object with the data
-            EmbeddedGameObjectTableHead result = gameObjectEmbeds[1];
+            EmbeddedGameObjectTableHead result = null;
+            foreach(var r in gameObjectEmbeds)
+            {
+                if (r.type == classname)
+                    result = r;
+            }
+
+            //Crash if not correct
+            if (result == null)
+                throw new Exception("Could not find image property data.");
 
             //Go to
             stream.position = result.dataLocation;

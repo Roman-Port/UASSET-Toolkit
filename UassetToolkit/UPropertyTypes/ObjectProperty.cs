@@ -59,9 +59,31 @@ namespace UassetToolkit.UPropertyTypes
 
         public UAssetFileBlueprint GetReferencedFileBlueprint()
         {
-            if (source.GetType() != typeof(UAssetFileBlueprint))
-                throw new Exception("Only UAssetFileBlueprint are supported for getting refrenced files with this method.");
-            return ((UAssetFileBlueprint)source).GetReferencedUAsset(this);
+            string pathname = source.GetReferencedUAssetPathname(this);
+            return source.GetReferencedUAssetBlueprintFromPathname(pathname);
+        }
+
+        public UAssetFileMaterial GetReferencedFileMaterial()
+        {
+            string pathname = source.GetReferencedUAssetPathname(this);
+            return source.GetReferencedUAssetMaterialFromPathname(pathname);
+        }
+
+        public UAssetFileTexture2D GetReferencedFileTexture2D()
+        {
+            string pathname = source.GetReferencedUAssetPathname(this);
+            return source.GetReferencedUAssetTexture2DFromPathname(pathname);
+        }
+
+        public ClassnamePathnamePair GetReferencedFile()
+        {
+            string pathname = source.GetReferencedUAssetPathname(this);
+            string classname = UAssetFile.GetPackageClassnameFromPath(pathname);
+            return new ClassnamePathnamePair
+            {
+                classname = classname,
+                pathname = pathname
+            };
         }
 
         public enum ObjectPropertyType

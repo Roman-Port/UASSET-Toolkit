@@ -25,8 +25,7 @@ namespace ArkImportTools.OutputEntities
         public string classname;
         public string blueprintPath;
 
-        public string icon_url;
-        public string thumb_icon_url;
+        public ArkImage icon;
 
         public Dictionary<DinoStatTypeIndex, float> baseLevel;
         public Dictionary<DinoStatTypeIndex, float> increasePerWildLevel;
@@ -36,21 +35,32 @@ namespace ArkImportTools.OutputEntities
 
         public int captureTime;
 
-        public static ArkDinoEntry Convert(UAssetFileBlueprint f, UAssetCacheBlock cache)
+        public static ArkDinoEntry Convert(UAssetFileBlueprint f, UAssetCacheBlock cache, Dictionary<string, PropertyReader> dinoEntries)
         {
             //Open reader
             PropertyReader reader = new PropertyReader(f.GetFullProperties(cache));
 
             //Get the dino settings
-            UAssetFileBlueprint settingsFileAdult = ArkDinoFood.GetAdultFile(f);
-            UAssetFileBlueprint settingsFileBaby = ArkDinoFood.GetBabyFile(f);
+            UAssetFileBlueprint settingsFileAdult = ArkDinoFood.GetAdultFile(f, cache);
+            UAssetFileBlueprint settingsFileBaby = ArkDinoFood.GetBabyFile(f, cache);
 
             //Get time
             int time = (int)Math.Round((DateTime.UtcNow - new DateTime(1970, 1, 1, 0, 0, 0, 0)).TotalSeconds);
 
             //Get status component
-            UAssetFileBlueprint statusComponent = ArkDinoEntryStatus.GetFile(f);
+            UAssetFileBlueprint statusComponent = ArkDinoEntryStatus.GetFile(f, cache);
             PropertyReader statusReader = new PropertyReader(statusComponent.GetFullProperties(cache));
+
+            //Use name tag to find entry
+            string tag = reader.GetPropertyStringOrName("DinoNameTag");
+            if (!dinoEntries.ContainsKey(tag))
+                throw new Exception($"Could not find dino entry for '{f.classname}' (tag '{tag}')");
+            PropertyReader entry = dinoEntries[tag];
+
+            //Now, load the material used for the dino image
+            UAssetFileMaterial entryMaterial = entry.GetProperty<ObjectProperty>("DinoMaterial").GetReferencedFileMaterial();
+            UAssetFileMaterial.TextureParameterValue entryMaterialTexture = entryMaterial.textureParameters[0];
+            ClassnamePathnamePair entryTexture = entryMaterialTexture.prop.GetReferencedFile();
 
             //Read
             ArkDinoEntry e = new ArkDinoEntry
@@ -67,7 +77,8 @@ namespace ArkImportTools.OutputEntities
                 childFoods = ArkDinoFood.Convert(settingsFileBaby, cache),
                 classname = f.classname,
                 blueprintPath = "N/A",
-                captureTime = time
+                captureTime = time,
+                icon = ImageTool.QueueImage(entryTexture)
             };
 
             //Finally, read stats
@@ -83,21 +94,31 @@ namespace ArkImportTools.OutputEntities
         public float babyDinoConsumingFoodRateMultiplier;
         public float extraBabyDinoConsumingFoodRateMultiplier;
         public float foodConsumptionMultiplier;
+        public float tamedBaseHealthMultiplier;
 
-        public static UAssetFileBlueprint GetFile(UAssetFileBlueprint f)
+        public static UAssetFileBlueprint GetFile(UAssetFileBlueprint f, UAssetCacheBlock cache)
         {
             //Search for this by name
             GameObjectTableHead hr = null;
-            foreach(var h in f.gameObjectReferences)
+            UAssetFileBlueprint workingFile = f;
+            while(hr == null && workingFile != null)
             {
-                if (h.name.StartsWith("DinoCharacterStatusComponent_BP_"))
-                    hr = h;
+                //Search
+                foreach (var h in workingFile.gameObjectReferences)
+                {
+                    if (h.name.StartsWith("DinoCharacterStatusComponent_BP_"))
+                        hr = h;
+                }
+
+                //Try to get the parent file
+                workingFile = workingFile.GetParentBlueprint(cache);
             }
             if (hr == null)
                 throw new Exception("Could not find dino status component!");
 
             //Open file
-            return f.GetReferencedUAsset(hr);
+            string pathname = f.GetReferencedUAssetPathname(hr);
+            return f.GetReferencedUAssetBlueprintFromPathname(pathname);
         }
 
         public static ArkDinoEntryStatus Convert(UAssetFileBlueprint f, PropertyReader reader)
@@ -107,7 +128,8 @@ namespace ArkImportTools.OutputEntities
                 baseFoodConsumptionRate = reader.GetPropertyFloat("BaseFoodConsumptionRate", null),
                 babyDinoConsumingFoodRateMultiplier = reader.GetPropertyFloat("BabyDinoConsumingFoodRateMultiplier", 25.5f),
                 extraBabyDinoConsumingFoodRateMultiplier = reader.GetPropertyFloat("ExtraBabyDinoConsumingFoodRateMultiplier", 20),
-                foodConsumptionMultiplier = reader.GetPropertyFloat("FoodConsumptionMultiplier", 1)
+                foodConsumptionMultiplier = reader.GetPropertyFloat("FoodConsumptionMultiplier", 1),
+                tamedBaseHealthMultiplier = reader.GetPropertyFloat("TamedBaseHealthMultiplier", 1)
             };
         }
     }
@@ -121,10 +143,10 @@ namespace ArkImportTools.OutputEntities
         public int foodCategory;
         public float priority;
 
-        public static UAssetFileBlueprint GetAdultFile(UAssetFileBlueprint f)
+        public static UAssetFileBlueprint GetAdultFile(UAssetFileBlueprint f, UAssetCacheBlock cache)
         {
             //First, try to see if it's a property
-            PropertyReader r = new PropertyReader(f.properties);
+            PropertyReader r = new PropertyReader(f.GetFullProperties(cache));
             ObjectProperty p = r.GetProperty<ObjectProperty>("AdultDinoSettings");
             if(p != null)
             {
@@ -144,10 +166,10 @@ namespace ArkImportTools.OutputEntities
             throw new Exception("Dino settings class was not found.");
         }
 
-        public static UAssetFileBlueprint GetBabyFile(UAssetFileBlueprint f)
+        public static UAssetFileBlueprint GetBabyFile(UAssetFileBlueprint f, UAssetCacheBlock cache)
         {
             //First, try to see if it's a property
-            PropertyReader r = new PropertyReader(f.properties);
+            PropertyReader r = new PropertyReader(f.GetFullProperties(cache));
             ObjectProperty p = r.GetProperty<ObjectProperty>("BabyDinoSettings");
             if (p != null)
             {
@@ -156,7 +178,7 @@ namespace ArkImportTools.OutputEntities
             }
 
             //Fallback to adult settings
-            return GetAdultFile(f);
+            return GetAdultFile(f, cache);
         }
 
         public static List<ArkDinoFood> Convert(UAssetFileBlueprint f, UAssetCacheBlock cache)

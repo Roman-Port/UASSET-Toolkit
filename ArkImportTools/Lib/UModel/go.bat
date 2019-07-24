@@ -1,0 +1,1 @@
+.\umodel.exe -path=".\\in_temp" -game=ark -out=out_temp -notgacomp -export *

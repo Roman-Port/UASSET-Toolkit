@@ -10,7 +10,7 @@ namespace UassetToolkit.UStructTypes
     /// </summary>
     public class PropListStruct : UStruct
     {
-        public Dictionary<string, UProperty> props;
+        public Dictionary<string, UProperty> props; //Could be unreliable
         public List<UProperty> propsList;
         public int count;
         public int u1;
@@ -26,7 +26,11 @@ namespace UassetToolkit.UStructTypes
 
             //Convert to dict
             foreach (UProperty p in sprops)
-                props.Add(p.name, p);
+            {
+                if(!props.ContainsKey(p.name))
+                    props.Add(p.name, p);
+            }
+                
 
             //Read two unknown ints
             u1 = ms.ReadInt();

@@ -28,6 +28,8 @@ namespace UassetToolkit
         public int headerUnknown13;
         public int thumbnailOffset; //Offset to the thumbnail, starting at the beginning of the file
         public int packagePropertyDictOffset; //Offset to the package property dict
+        //(...)
+        public int headerPayloadBegin; //Value that seems to be important to reading images. At position 147 in header
         
         //Package data
         public string[] name_table; //Maps IDs to classnames
@@ -129,7 +131,10 @@ namespace UassetToolkit
         public static string GetPackageClassnameFromPath(string pathname)
         {
             string[] splitClassname = pathname.Split('/');
-            return splitClassname[splitClassname.Length - 1];
+            string name = splitClassname[splitClassname.Length - 1];
+            if (name.EndsWith(".uasset"))
+                name = name.Substring(0, name.Length - ".uasset".Length);
+            return name;
         }
 
         void ReadHeaderData()
@@ -156,6 +161,10 @@ namespace UassetToolkit
             headerUnknown13 = stream.ReadInt();
             thumbnailOffset = stream.ReadInt();
             packagePropertyDictOffset = stream.ReadInt();
+
+            //There's some data that we don't know how to get to that seems to sit at 16 bytes before the name table. Read it
+            stream.position = nameTableOffset - 16;
+            headerPayloadBegin = stream.ReadInt();
 
             //Dump
             DebugDump("Header Data", ConsoleColor.Cyan, "headerUnknown1", headerUnknown1.ToString(), "headerUnknown2", headerUnknown2.ToString(), "headerUnknown3", headerUnknown3.ToString(),
@@ -208,6 +217,13 @@ namespace UassetToolkit
 
         void ReadPackageMetadata()
         {
+            //Some files seem to have no package metadata. They might be corrupted?
+            if(packagePropertyDictOffset == 0)
+            {
+                metadata = new Dictionary<string, string>();
+                return;
+            }
+
             stream.position = packagePropertyDictOffset;
 
             stream.ReadInt();
@@ -228,6 +244,106 @@ namespace UassetToolkit
                 else
                     metadata.Add(lastKey, stream.ReadUEString());
             }
+        }
+
+        public Stream CopyPayload()
+        {
+            //Check payload position
+            if (headerPayloadBegin > stream.ms.Length)
+                throw new Exception("Payload beginning is after the end of file!");
+
+            //Open stream and copy
+            MemoryStream ms = new MemoryStream();
+            byte[] buffer = new byte[2048];
+            int bytesRemaining = (int)stream.ms.Length - headerPayloadBegin;
+            stream.position = headerPayloadBegin;
+            while(bytesRemaining > 0)
+            {
+                int size = Math.Min(2048, bytesRemaining);
+                stream.ms.Read(buffer, 0, size);
+                ms.Write(buffer, 0, size);
+                bytesRemaining -= size;
+            }
+
+            //Rewind and return
+            ms.Position = 0;
+            return ms;
+        }
+
+        //Refs
+        public string GetReferencedUAssetPathname(ObjectProperty h)
+        {
+            //Make sure htis is the correct type
+            if (h.objectRefType != ObjectProperty.ObjectPropertyType.TypeID)
+                throw new Exception("Only TypeID ObjectProperties are supported for finding a referenced file.");
+
+            //Find using the ID
+            return GetReferencedUAssetPathname(h.objectIndex);
+        }
+
+        public string GetReferencedUAssetPathname(int index)
+        {
+            if (index < 0)
+            {
+                GameObjectTableHead hr = gameObjectReferences[-index - 1];
+                return GetReferencedUAssetPathname(hr);
+            }
+            else
+            {
+                GameObjectTableHead hr = gameObjectReferences[index];
+                return GetReferencedUAssetPathname(hr);
+            }
+        }
+
+        public string GetReferencedUAssetPathname(GameObjectTableHead h)
+        {
+            //Check if we're actually looking for something else
+            if (h.index < 0)
+            {
+                GameObjectTableHead hr = gameObjectReferences[-h.index - 1];
+                return GetReferencedUAssetPathname(hr);
+            }
+
+            //Get the full path
+            bool ok = TryGetFullPackagePath(h.name, out string pathname);
+
+            //Stop if not ok
+            if (!ok)
+                return null;
+
+            return pathname;
+        }
+
+        //Refs type
+        void BaseGetReferencedUAssetBaseFromPathname(UAssetFile bp, string pathname)
+        {
+            //Get the pathname
+            string classname = GetPackageClassnameFromPath(pathname);
+
+            //Open file
+            using (FileStream fs = new FileStream(pathname, FileMode.Open, FileAccess.Read))
+                bp.ReadFile(fs, isDebugModeEnabled, classname, rootPath);
+        }
+
+        public UAssetFileBlueprint GetReferencedUAssetBlueprintFromPathname(string pathname)
+        {
+            UAssetFileBlueprint bp = new UAssetFileBlueprint();
+            BaseGetReferencedUAssetBaseFromPathname(bp, pathname);
+            return bp;
+        }
+
+        public UAssetFileMaterial GetReferencedUAssetMaterialFromPathname(string pathname)
+        {
+            UAssetFileMaterial bp = new UAssetFileMaterial();
+            BaseGetReferencedUAssetBaseFromPathname(bp, pathname);
+            return bp;
+        }
+
+        public UAssetFileTexture2D GetReferencedUAssetTexture2DFromPathname(string pathname)
+        {
+            UAssetFileTexture2D bp = new UAssetFileTexture2D();
+            BaseGetReferencedUAssetBaseFromPathname(bp, pathname);
+            return bp;
         }
 
         //Tools

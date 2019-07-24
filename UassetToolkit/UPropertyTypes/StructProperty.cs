@@ -78,10 +78,14 @@ namespace UassetToolkit.UPropertyTypes
                     //Some net stuff
                     st = new IntPointStruct();
                 }
+                else if(structType == "StringAssetReference")
+                {
+                    st = new StringAssetReferenceStruct();
+                }
                 else
                 {
                     //Interpet this as a struct property list. Maybe raise a warning later?
-                    f.Debug("Struct Warning", $"Unknown type '{structType}'. Interpeting as a struct property list...", ConsoleColor.Red);
+                    f.Warn("Struct Warning", $"Unknown type '{structType}'. Interpeting as a struct property list...");
                     st = new PropListStruct();
                 }
             }

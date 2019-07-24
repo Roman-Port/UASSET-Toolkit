@@ -34,8 +34,33 @@ namespace UassetToolkit
             if (p == null)
                 return default(T);
 
-            //Cast
-            return (T)Convert.ChangeType(p, typeof(T));
+            try
+            {
+                //Cast
+                return (T)Convert.ChangeType(p, typeof(T));
+            } catch
+            {
+                return default(T);
+            }
+        }
+
+        public string GetPropertyStringOrName(string name, int index = -1)
+        {
+            UProperty p = GetProperty(name, index);
+
+            if (p == null)
+                return null;
+
+            if(p.GetType() == typeof(NameProperty))
+            {
+                NameProperty np = (NameProperty)p;
+                return np.data;
+            } else if (p.GetType() == typeof(StrProperty))
+            {
+                StrProperty np = (StrProperty)p;
+                return np.data;
+            }
+            return null;
         }
 
         public string GetPropertyString(string name, string defaultValue, int index = -1)
