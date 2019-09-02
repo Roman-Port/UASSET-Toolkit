@@ -14,6 +14,17 @@ namespace UassetToolkit
             this.props = props;
         }
 
+        public bool HasProperty(string name, int index = -1)
+        {
+            //Find
+            foreach (UProperty p in props)
+            {
+                if (p.name == name && (index == -1 || index == p.index))
+                    return true;
+            }
+            return false;
+        }
+
         public UProperty GetProperty(string name, int index = -1)
         {
             //Find
@@ -100,6 +111,19 @@ namespace UassetToolkit
                 return defaultValue.Value;
             else
                 return r.data;
+        }
+
+        public byte GetPropertyByte(string name, byte? defaultValue, int index = -1)
+        {
+            var r = GetProperty<ByteProperty>(name, index);
+
+            if (defaultValue == null && r == null)
+                throw new Exception($"Required attribute is missing for name {name}.");
+
+            if (r == null)
+                return defaultValue.Value;
+            else
+                return r.byteValue;
         }
 
         public bool GetPropertyBool(string name, bool? defaultValue, int index = -1)

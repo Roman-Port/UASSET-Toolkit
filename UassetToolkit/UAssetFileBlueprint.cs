@@ -10,6 +10,7 @@ namespace UassetToolkit
     {
         //Package data
         public List<UProperty> properties;
+        public List<UProperty> metadata;
 
         public static UAssetFileBlueprint OpenFile(string pathname, bool isDebugEnabled, string classname, string rootPath)
         {
@@ -37,6 +38,9 @@ namespace UassetToolkit
             //Do initial init
             base.ReadFile(s, isDebugEnabled, classname, rootPath);
 
+            //Read metadata
+            ReadMetadataProperties();
+
             //Now, read properties
             ReadDefaultProperties();
         }
@@ -51,6 +55,41 @@ namespace UassetToolkit
 
             //Read
             properties = UProperty.ReadProperties(stream, this, null, false);
+        }
+
+        void ReadMetadataProperties()
+        {
+            //Find the embedded game object with the data
+            EmbeddedGameObjectTableHead result = FindEmbeddedObjectByType($"{classname}");
+
+            //Go to
+            stream.position = result.dataLocation;
+
+            //Read
+            metadata = UProperty.ReadProperties(stream, this, null, false);
+            var reader = new PropertyReader(metadata);
+
+            //Get parent class
+            
+            if(reader.HasProperty("ParentClass"))
+            {
+                ObjectProperty parent = reader.GetProperty<ObjectProperty>("ParentClass");
+                var parentFile = parent.GetReferencedFile();
+                if(parentFile != null)
+                {
+                    //The parent is an object we can read
+                    parentClassname = parentFile.classname;
+                    parentPath = parentFile.pathname;
+                    hasParentUObject = true;
+                } else
+                {
+                    //The parent is not a uobject
+                    hasParentUObject = false;
+                }
+            } else
+            {
+                hasParentUObject = false;
+            }
         }
 
         public UAssetFileBlueprint GetParentBlueprint(UAssetCacheBlock cache)

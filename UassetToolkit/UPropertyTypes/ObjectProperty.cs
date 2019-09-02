@@ -78,7 +78,11 @@ namespace UassetToolkit.UPropertyTypes
         public ClassnamePathnamePair GetReferencedFile()
         {
             string pathname = source.GetReferencedUAssetPathname(this);
+            if (pathname == null)
+                return null;
             string classname = UAssetFile.GetPackageClassnameFromPath(pathname);
+            if (classname == null)
+                return null;
             return new ClassnamePathnamePair
             {
                 classname = classname,

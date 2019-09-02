@@ -41,14 +41,14 @@ namespace ArkImportTools.OutputEntities
             //Get primary icon
             ArkImage icon;
             if (reader.GetProperty<ObjectProperty>("ItemIcon") != null)
-                icon = ImageTool.QueueImage(reader.GetProperty<ObjectProperty>("ItemIcon").GetReferencedFile());
+                icon = ImageTool.QueueImage(reader.GetProperty<ObjectProperty>("ItemIcon").GetReferencedFile(), ImageTool.ImageModifications.None);
             else
                 icon = ArkImage.MISSING_ICON;
 
             //Get broken icon
             ArkImage brokenIcon;
             if (reader.GetProperty<ObjectProperty>("BrokenImage") != null)
-                brokenIcon = ImageTool.QueueImage(reader.GetProperty<ObjectProperty>("BrokenImage").GetReferencedFile());
+                brokenIcon = ImageTool.QueueImage(reader.GetProperty<ObjectProperty>("BrokenImage").GetReferencedFile(), ImageTool.ImageModifications.None);
             else
                 brokenIcon = ArkImage.MISSING_ICON;
 

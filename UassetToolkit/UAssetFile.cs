@@ -75,12 +75,12 @@ namespace UassetToolkit
             ReadPackageMetadata();
 
             //Get parent classname
-            hasParentUObject = false;
+            /*hasParentUObject = false;
             if(metadata.ContainsKey("ParentClassPackage"))
             {
                 hasParentUObject = TryGetFullPackagePath(metadata["ParentClassPackage"], out parentPath);
                 parentClassname = GetPackageClassnameFromPath(metadata["ParentClassPackage"]);
-            }
+            }*/
         }
 
         public void Debug(string topic, string msg, ConsoleColor color)
@@ -226,13 +226,13 @@ namespace UassetToolkit
 
             stream.position = packagePropertyDictOffset;
 
-            stream.ReadInt();
-            stream.ReadUEString();
-            stream.ReadUEString();
-            stream.ReadInt();
-            stream.ReadInt(); //1
-            stream.ReadUEString(); //argent_character_bp
-            stream.ReadUEString(); //Blueprint
+            int u1 = stream.ReadInt();
+            string u2 = stream.ReadUEString();
+            string u3 = stream.ReadUEString();
+            int u4 = stream.ReadInt();
+            int u5 = stream.ReadInt(); //1
+            string u6 = stream.ReadUEString(); //argent_character_bp
+            string u7 = stream.ReadUEString(); //Blueprint
 
             int len = stream.ReadInt();
             string lastKey = null;

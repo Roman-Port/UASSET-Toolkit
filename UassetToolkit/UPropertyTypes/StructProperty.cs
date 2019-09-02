@@ -32,8 +32,8 @@ namespace UassetToolkit.UPropertyTypes
                 unknown = ms.ReadInt();
                 f.Debug("Read Array", $"====READ STRUCT BEGIN @ {ms.position} ({structType}, {unknown})====", ConsoleColor.Yellow);
 
-                //Find the struct type
-                if (structType == "ItemNetID" || structType == "ItemNetInfo" || structType == "Transform" || structType == "PrimalPlayerDataStruct" || structType == "PrimalPlayerCharacterConfigStruct" || structType == "PrimalPersistentCharacterStatsStruct" || structType == "TribeData" || structType == "TribeGovernment" || structType == "TerrainInfo" || structType == "ArkInventoryData" || structType == "DinoOrderGroup" || structType == "ARKDinoData")
+                //Find the struct type. Unknown if real: ItemStatInfo
+                if (structType == "ItemStatInfo" ||structType == "ItemNetID" || structType == "ItemNetInfo" || structType == "Transform" || structType == "PrimalPlayerDataStruct" || structType == "PrimalPlayerCharacterConfigStruct" || structType == "PrimalPersistentCharacterStatsStruct" || structType == "TribeData" || structType == "TribeGovernment" || structType == "TerrainInfo" || structType == "ArkInventoryData" || structType == "DinoOrderGroup" || structType == "ARKDinoData")
                 {
                     //Open this as a struct property list.
                     st = new PropListStruct();

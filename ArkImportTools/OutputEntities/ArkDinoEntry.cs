@@ -26,6 +26,7 @@ namespace ArkImportTools.OutputEntities
         public string blueprintPath;
 
         public ArkImage icon;
+        public ArkImage icon_white;
 
         public Dictionary<DinoStatTypeIndex, float> baseLevel;
         public Dictionary<DinoStatTypeIndex, float> increasePerWildLevel;
@@ -78,7 +79,8 @@ namespace ArkImportTools.OutputEntities
                 classname = f.classname,
                 blueprintPath = "N/A",
                 captureTime = time,
-                icon = ImageTool.QueueImage(entryTexture)
+                icon = ImageTool.QueueImage(entryTexture, ImageTool.ImageModifications.None),
+                icon_white = ImageTool.QueueImage(entryTexture, ImageTool.ImageModifications.White)
             };
 
             //Finally, read stats

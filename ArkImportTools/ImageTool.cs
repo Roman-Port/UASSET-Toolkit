@@ -20,9 +20,9 @@ namespace ArkImportTools
 
         private static List<QueuedImage> queue = new List<QueuedImage>();
 
-        public static ArkImage QueueImage(ClassnamePathnamePair name)
+        public static ArkImage QueueImage(ClassnamePathnamePair name, ImageModifications mods)
         {
-            return QueueImage(name.classname, name.pathname);
+            return QueueImage(name.classname, name.pathname, mods);
         }
 
         public static string GetAssetsUrl()
@@ -31,7 +31,7 @@ namespace ArkImportTools
             return ASSETS_URL + Program.revision + "/";
         }
 
-        public static ArkImage QueueImage(string classname, string pathname)
+        public static ArkImage QueueImage(string classname, string pathname, ImageModifications mods)
         {
             //Generate IDs for the high res image and thumbnail
             string hiId = GenerateUniqueImageID();
@@ -50,7 +50,8 @@ namespace ArkImportTools
                 classname = classname,
                 pathname = pathname,
                 hiId = hiId,
-                loId = loId
+                loId = loId,
+                mods = mods
             });
 
             return r;
@@ -144,6 +145,10 @@ namespace ArkImportTools
                                 }
                             }
 
+                            //Apply mods
+                            if (q.mods == ImageModifications.White)
+                                ApplyWhiteMod(img);
+
                             //Save original image
                             using (FileStream fs = new FileStream(Program.GetOutputDir() + "assets\\" + q.hiId + FORMAT_TYPE, FileMode.Create))
                                 img.SaveAsPng(fs);
@@ -210,12 +215,32 @@ namespace ArkImportTools
             return new string(output);
         }
 
+        static void ApplyWhiteMod(Image<Rgba32> img)
+        {
+            //Set all pixels to white, but keep the alpha
+            for(int x = 0; x<img.Width; x++)
+            {
+                for(int y = 0; y<img.Height; y++)
+                {
+                    Rgba32 v = img[x, y];
+                    img[x, y] = new Rgba32(255, 255, 255, v.A);
+                }
+            }
+        }
+
         class QueuedImage
         {
             public string loId;
             public string hiId;
             public string classname;
             public string pathname;
+            public ImageModifications mods;
+        }
+
+        public enum ImageModifications
+        {
+            None,
+            White
         }
     }
 }

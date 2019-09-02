@@ -10,14 +10,15 @@ namespace ArkImportTools
 {
     class Program
     {
-        public const string GAME_ROOT_PATH = @"E:\Programs\ARKEditor\Projects\ShooterGame\Content\";
-        public const string OUTPUT_PATH = @"E:\ArkExportV2\";
+        public const string GAME_ROOT_PATH = @"D:\Programs\ARKEditor\Projects\ShooterGame\Content\";
+        public const string OUTPUT_PATH = @"D:\ArkExportV2\";
 
         public static string revision = null;
 
         static void Main(string[] args)
         {
             DoRun();
+            //DebugFile(@"C:\Program Files (x86)\Steam\steamapps\common\ARK\ShooterGame\Content\", @"PrimalEarth\Dinos\Argentavis\Argent_Character_BP.uasset", "Argent_Character_BP");
 
             //MultipleFileTest();
         }
@@ -30,8 +31,8 @@ namespace ArkImportTools
             //Create cache and import
             UAssetCacheBlock cache = new UAssetCacheBlock();
             List<string> readErrors = new List<string>();
-            DinoImporter.ImportDinos(cache, map, readErrors);
-            //ItemImporter.ImportItems(cache, map, readErrors);
+            //DinoImporter.ImportDinos(cache, map, readErrors);
+            ItemImporter.ImportItems(cache, map, readErrors);
 
             //Now, save imges
             ImageTool.ProcessImages(readErrors);
@@ -51,6 +52,20 @@ namespace ArkImportTools
                 Directory.CreateDirectory(OUTPUT_PATH + revision+"\\assets\\");
             }
             return OUTPUT_PATH + revision + "\\";
+        }
+
+        static void DebugFile(string gameRoot, string package, string classname)
+        {
+            using (FileStream fs = new FileStream(gameRoot+package, FileMode.Open, FileAccess.Read))
+            {
+                UAssetFileBlueprint f = UAssetFileBlueprint.OpenFile(fs, true, classname, gameRoot);
+                UAssetCacheBlock cache = new UAssetCacheBlock();
+                List<UProperty> props = f.GetFullProperties(cache);
+                foreach (var p in props)
+                    Console.WriteLine($"{p.name}, {p.type}, {p.WriteString()}");
+            }
+            Console.WriteLine("Complete.");
+            Console.ReadLine();
         }
 
         static void MultipleFileTest()
